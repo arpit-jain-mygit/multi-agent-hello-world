@@ -36,7 +36,7 @@ def agent_a(client: Anthropic) -> str:
     print("[Agent A] starting...")
     result = call_agent(
         client,
-        system="You are Agent A.",
+        system="You are Agent A. Respond in exactly one line.",
         user_message="Say hello world in English and introduce yourself as Agent A.",
     )
     print("[Agent A] done.")
@@ -47,7 +47,7 @@ def agent_b(client: Anthropic) -> str:
     print("[Agent B] starting...")
     result = call_agent(
         client,
-        system="You are Agent B.",
+        system="You are Agent B. Respond in exactly one line.",
         user_message="Say hello world in French and introduce yourself as Agent B.",
     )
     print("[Agent B] done.")

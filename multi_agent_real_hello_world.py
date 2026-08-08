@@ -36,7 +36,7 @@ def main() -> None:
     print("[Agent 1: Greeter] calling Claude...")
     greeting = call_agent(
         client,
-        system="You are Agent 1, the Greeter.",
+        system="You are Agent 1, the Greeter. Respond in exactly one line.",
         user_message="Say hello world and briefly introduce yourself as Agent 1.",
     )
     print(f"[Agent 1: Greeter] {greeting}\n")
@@ -44,7 +44,7 @@ def main() -> None:
     print("[Agent 2: Responder] calling Claude...")
     reply = call_agent(
         client,
-        system="You are Agent 2, the Responder.",
+        system="You are Agent 2, the Responder. Respond in exactly one line.",
         user_message=f"Agent 1 just said: \"{greeting}\"\n\nRespond to Agent 1's greeting.",
     )
     print(f"[Agent 2: Responder] {reply}")
