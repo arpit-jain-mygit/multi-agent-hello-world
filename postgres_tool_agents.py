@@ -70,7 +70,19 @@ TOOL_DEFINITIONS = [
 # ============================================================================
 
 def agent_fetcher(client: Anthropic) -> str:
+    # --------------------------------------------------------------------
+    # Flow of this function:
+    #   1. Send Claude an instruction to use the get_greetings tool.
+    #   2. If Claude responds by requesting the tool (stop_reason == "tool_use"),
+    #      run the real Postgres query ourselves and hand the result back to Claude.
+    #   3. Claude reads the tool result and produces its final one-line answer.
+    #   4. Extract and return that final text to the caller (main()).
+    # --------------------------------------------------------------------
+
     print("[Agent 1: Fetcher] starting...")
+
+    # messages: the running conversation history sent to Claude on every call.
+    # Starts with a single user turn instructing Claude what to do.
     messages = [
         {
             "role": "user",
@@ -81,6 +93,8 @@ def agent_fetcher(client: Anthropic) -> str:
 
     # One tool-call round trip: call Claude, execute any tool it requests,
     # send the result back, then take Claude's final answer.
+    # response: Claude's reply to the first call — either straight to text
+    # (if it decides not to use a tool) or a request to call get_greetings.
     response = client.messages.create(
         model=MODEL,
         max_tokens=1024,
@@ -89,19 +103,44 @@ def agent_fetcher(client: Anthropic) -> str:
         tools=TOOL_DEFINITIONS,
     )
 
+    # response.stop_reason == "tool_use" means Claude wants to call a tool
+    # before it can answer, so we need a second round trip below.
     if response.stop_reason == "tool_use":
+        # Record Claude's tool-request turn in the conversation history —
+        # required so the next request has full context of what was asked.
         messages.append({"role": "assistant", "content": response.content})
+
+        # tool_results: collects one entry per tool Claude asked to run,
+        # to be sent back to Claude as a single user turn.
         tool_results = []
+
+        # response.content is a list of content blocks; we only act on the
+        # ones of type "tool_use" (Claude may also emit plain text alongside).
         for block in response.content:
             if block.type == "tool_use":
+                # block.name: which tool Claude wants to call (e.g. "get_greetings").
+                # block.input: the arguments Claude chose for that tool (e.g. {"limit": 5}).
                 print(f"[Agent 1: Fetcher] calling tool: {block.name}({block.input})")
+
+                # result: the real return value from actually running the tool
+                # (executes the live Postgres query — this is not simulated).
                 result = TOOLS[block.name](**block.input)
                 print(f"[Agent 1: Fetcher] tool result: {result}")
+
+                # block.id: the tool_use_id Claude assigned this call; the
+                # tool_result we send back must reference it so Claude can
+                # match the result to the request it made.
                 tool_results.append(
                     {"type": "tool_result", "tool_use_id": block.id, "content": result}
                 )
+
+        # Append the tool results as a user turn — this is how tool output
+        # gets back into the conversation for Claude to read.
         messages.append({"role": "user", "content": tool_results})
 
+        # Second call: now that Claude has the real tool result in its
+        # context, ask it for its final one-line answer.
+        # response is reassigned here to hold this second reply.
         response = client.messages.create(
             model=MODEL,
             max_tokens=1024,
@@ -110,8 +149,12 @@ def agent_fetcher(client: Anthropic) -> str:
             tools=TOOL_DEFINITIONS,
         )
 
+    # final_text: pulls out the plain-text answer from Claude's last response
+    # (skipping over any non-text content blocks, though none are expected here).
     final_text = next(block.text for block in response.content if block.type == "text")
     print(f"[Agent 1: Fetcher] {final_text}")
+
+    # Hand the one-line finding back to main(), which will pass it to Agent 2.
     return final_text
 
 
