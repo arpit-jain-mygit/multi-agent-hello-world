@@ -16,7 +16,7 @@ Run:
 
 from anthropic import Anthropic
 
-MODEL = "claude-opus-5"
+MODEL = "claude-haiku-4-5"
 
 
 def call_agent(client: Anthropic, system: str, user_message: str) -> str:
