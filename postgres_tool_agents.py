@@ -114,8 +114,14 @@ def agent_fetcher(client: Anthropic) -> str:
         # to be sent back to Claude as a single user turn.
         tool_results = []
 
-        # response.content is a list of content blocks; we only act on the
-        # ones of type "tool_use" (Claude may also emit plain text alongside).
+        # response.content is a LIST of blocks — Claude can return text +
+        # multiple tool_use blocks in one turn (parallel tool calls), so we
+        # must loop, not assume a single block at a fixed index.
+        # block.type values you'll see here: "text" (plain reply) or
+        # "tool_use" (a request to call a tool). We only act on "tool_use".
+        # Tool vs. block: a "tool" is something YOU defined (e.g.
+        # get_greetings, in TOOL_DEFINITIONS); a "block" is one item in
+        # Claude's response. A tool_use block is Claude "dialing" a tool.
         for block in response.content:
             if block.type == "tool_use":
                 # block.name: which tool Claude wants to call (e.g. "get_greetings").
