@@ -6,6 +6,18 @@ Same idea as chained_agents.py (Agent 1 -> Agent 2, passing one param),
 but the chaining and state passing is expressed as a 2-node LangGraph
 graph instead of Agent 1 calling Agent 2's Python function directly.
 
+Purpose of each library in this program:
+  - LangChain (langchain_anthropic.ChatAnthropic): the LLM client. It
+    replaces the raw `anthropic.Anthropic().messages.create(...)` call
+    from chained_agents.py with a `.invoke(...)` call — same underlying
+    Claude API request, just wrapped in LangChain's model interface.
+  - LangGraph (langgraph.graph.StateGraph): the orchestration/control-flow
+    layer. It replaces "Agent 1's Python function directly calls Agent 2's
+    Python function" with an explicit graph: two nodes (agent_one,
+    agent_two) and one edge between them, plus a typed `state` dict that
+    is threaded through both nodes instead of being passed as function
+    arguments/return values.
+
 Setup:
     pip install anthropic langgraph langchain-anthropic
     export ANTHROPIC_API_KEY=your_key_here
@@ -16,8 +28,8 @@ Run:
 
 from typing import TypedDict
 
-from langchain_anthropic import ChatAnthropic
-from langgraph.graph import END, StateGraph
+from langchain_anthropic import ChatAnthropic  # LangChain: wraps the Claude API call
+from langgraph.graph import END, StateGraph  # LangGraph: defines the agent graph/flow
 
 MODEL = "claude-haiku-4-5"
 llm = ChatAnthropic(model=MODEL, max_tokens=1024)
