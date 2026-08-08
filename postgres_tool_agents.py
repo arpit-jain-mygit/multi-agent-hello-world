@@ -83,6 +83,12 @@ def agent_fetcher(client: Anthropic) -> str:
 
     # messages: the running conversation history sent to Claude on every call.
     # Starts with a single user turn instructing Claude what to do.
+    # This IS real context accumulation — unlike the other example programs,
+    # this same `messages` list is grown and resent below (Claude's API is
+    # stateless, so the tool_use + tool_result turns must be replayed for
+    # Claude to "remember" it already asked for get_greetings). This
+    # context stays local to agent_fetcher though — Agent 2 (agent_summarizer,
+    # below) never sees this messages list, only the plain `findings` string.
     messages = [
         {
             "role": "user",
@@ -170,6 +176,9 @@ def agent_fetcher(client: Anthropic) -> str:
 
 def agent_summarizer(client: Anthropic, findings: str) -> str:
     print("\n[Agent 2: Summarizer] starting...")
+    # Fresh, one-shot messages list — no context shared with Agent 1.
+    # `findings` (a plain string) is the only thing that crosses the
+    # agent boundary; Agent 1's messages/tool-call history stays private.
     response = client.messages.create(
         model=MODEL,
         max_tokens=1024,

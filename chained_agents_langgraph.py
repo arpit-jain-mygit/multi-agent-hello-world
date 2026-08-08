@@ -37,6 +37,10 @@ llm = ChatAnthropic(model=MODEL, max_tokens=1024)
 
 # State is what gets passed between nodes in the graph — this replaces the
 # plain function arguments/return values used in chained_agents.py.
+# Important: this is APPLICATION state, not LLM conversation context — each
+# node still calls llm.invoke([...]) with only its own two messages below.
+# Agent 2 never sees Agent 1's conversation, only the plain values (e.g.
+# state["language"]) that were written into this dict.
 class ChainState(TypedDict):
     greeting: str   # Agent 1's own hello-world message
     language: str   # the param Agent 1 passes to Agent 2

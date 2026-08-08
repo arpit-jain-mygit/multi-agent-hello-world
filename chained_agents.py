@@ -22,6 +22,10 @@ MODEL = "claude-haiku-4-5"
 
 def call_agent(client: Anthropic, system: str, user_message: str) -> str:
     """One real call to Claude acting as a single agent."""
+    # Fresh messages list every call. Even though Agent 1 calls Agent 2
+    # directly in code, Agent 2's Claude call still gets no conversation
+    # history from Agent 1 — only the `language` string param (see
+    # agent_two below) is passed, not Agent 1's messages/context.
     response = client.messages.create(
         model=MODEL,
         max_tokens=1024,

@@ -22,6 +22,9 @@ MODEL = "claude-haiku-4-5"
 
 def call_agent(client: Anthropic, system: str, user_message: str) -> str:
     """One real call to Claude acting as a single agent."""
+    # Fresh messages list every call — each agent instance gets its own
+    # isolated context. Only the language param travels between agents
+    # (via the orchestrator), never conversation history.
     response = client.messages.create(
         model=MODEL,
         max_tokens=1024,

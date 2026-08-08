@@ -21,6 +21,11 @@ MODEL = "claude-haiku-4-5"
 
 def call_agent(client: Anthropic, system: str, user_message: str) -> str:
     """One real call to Claude acting as a single agent."""
+    # Context is NOT shared between agents: this messages list is built
+    # fresh, from scratch, on every call — Agent 2 never sees Agent 1's
+    # conversation history, only whatever plain text is passed into
+    # user_message (see main(): Agent 1's greeting is interpolated into
+    # Agent 2's user_message as a string, not sent as prior history).
     response = client.messages.create(
         model=MODEL,
         max_tokens=1024,

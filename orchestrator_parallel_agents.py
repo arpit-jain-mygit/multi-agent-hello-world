@@ -23,6 +23,9 @@ MODEL = "claude-haiku-4-5"
 
 def call_agent(client: Anthropic, system: str, user_message: str) -> str:
     """One real call to Claude acting as a single agent."""
+    # Fresh messages list every call — no context is shared between Agent A
+    # and Agent B. They're fully independent (that's what makes running
+    # them in parallel safe): neither sees the other's conversation.
     response = client.messages.create(
         model=MODEL,
         max_tokens=1024,
